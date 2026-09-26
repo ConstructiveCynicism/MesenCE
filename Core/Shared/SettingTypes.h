@@ -499,8 +499,8 @@ struct GbaConfig
 
 	bool FakeAdapter = false;
 	uint32_t FakeAdapterResetReady = 0;
-	uint32_t FakeAdapterAck = 0;
-	uint32_t FakeAdapterAckTimeout = 0;
+	uint32_t FakeAdapterAck = 168;
+	uint32_t FakeAdapterAckTimeout = 13422;
 	uint32_t FakeAdapterAdapterBoot = 83386080;
 
 	int64_t GbaCustomDate = -1;

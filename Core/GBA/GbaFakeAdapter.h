@@ -22,9 +22,9 @@ public:
 		//SD pulse -> login answer
 		uint64_t ResetReady = 0;
 		//SO raised -> SI dropped
-		uint64_t Ack = 0;
+		uint64_t Ack = 168;
 		//SO not raised -> SI dropped
-		uint64_t AckTimeout = 0;
+		uint64_t AckTimeout = 13422;
 		//Power -> Ready
 		uint64_t AdapterBoot = 83386080; //Must be at least 4.586s
 	};
@@ -37,7 +37,9 @@ public:
 
 	void PowerOn(uint64_t clock)
 	{
+		//not reset yet
 		_powerOnClock = clock + _timings.AdapterBoot;
+		_phase = AdapterState::Sleep;
 	}
 
 	//Serial Data line
@@ -313,7 +315,7 @@ private:
 					RejectCommand();
 				} else {
 					_radio = RadioState::Idle;
-					RejectCommand();
+					AcceptCommand();
 				}
 				break;
 
@@ -357,7 +359,7 @@ private:
 					RejectCommand();
 				} else {
 					_response[1] = 0x01000000; //in progress
-					AcceptCommand();
+					AcceptCommand(1);
 				}
 				break;
 

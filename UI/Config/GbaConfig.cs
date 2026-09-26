@@ -42,8 +42,8 @@ namespace Mesen.Config
 
 		[ObservableProperty] public partial bool FakeAdapter { get; set; } = false;
 		[ObservableProperty] public partial UInt32 FakeAdapterResetReady { get; set; } = 0;
-		[ObservableProperty] public partial UInt32 FakeAdapterAck { get; set; } = 0;
-		[ObservableProperty] public partial UInt32 FakeAdapterAckTimeout { get; set; } = 0;
+		[ObservableProperty] public partial UInt32 FakeAdapterAck { get; set; } = 168;
+		[ObservableProperty] public partial UInt32 FakeAdapterAckTimeout { get; set; } = 13422;
 		[ObservableProperty] public partial UInt32 FakeAdapterAdapterBoot { get; set; } = 83386080;
 
 		public void ApplyConfig()
