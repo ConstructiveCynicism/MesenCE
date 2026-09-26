@@ -55,6 +55,7 @@ private:
 		timings.AckTimeout = cfg.FakeAdapterAckTimeout;
 		timings.AdapterBoot = cfg.FakeAdapterAdapterBoot;
 
+		_fakeAdapter = GbaFakeAdapter();
 		_fakeAdapter.SetTimings(timings);
 		_fakeAdapter.PowerOn(clock);
 		_fakeAdapter.SetResetLine(IsSDHigh(), clock);
