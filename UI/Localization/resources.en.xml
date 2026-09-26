@@ -423,6 +423,7 @@
 			<Control ID="grpGeneral">General</Control>
 			<Control ID="chkAllowInvalidInput">Allow invalid input (e.g Down + Up or Left + Right at the same time)</Control>
 			<Control ID="chkEnableMgbaLogApi">Enable mGBA log API</Control>
+			<Control ID="chkFakeAdapter">Connect Wireless Adapter</Control>
 
 			<Control ID="grpOverclocking">Overclocking</Control>
 			<Control ID="lblOverclockHint">Overclocking can help reduce or remove slowdowns in games (but it can also cause issues). To overclock, increase the value below.</Control>
@@ -1762,6 +1763,9 @@
 		<Message ID="VideoLayerEnabled">{0} enabled.</Message>
 		<Message ID="AllLayersEnabled">All BG/sprite layers enabled.</Message>
 
+		<Message ID="GbaWirelessAdapterConnected">Wireless Adapter connected.</Message>
+		<Message ID="GbaWirelessAdapterDisconnected">Wireless Adapter disconnected.</Message>
+
 		<Message ID="PromptSaveChanges">Save changes?</Message>
 		<Message ID="PromptKeepChanges">Keep changes?</Message>
 
@@ -2012,6 +2016,8 @@ E
 			<Value ID="VsInsertCoin4">VS - Insert Coin 4 (DualSystem)</Value>
 			<Value ID="VsServiceButton">VS - Service Button</Value>
 			<Value ID="VsServiceButton2">VS - Service Button 2 (DualSystem)</Value>
+
+			<Value ID="ToggleGbaWirelessAdapter">GBA - Connect/Disconnect Wireless Adapter</Value>
 
 			<Value ID="InputBarcode">Input Barcode</Value>
 			<Value ID="LoadTape">Load Tape From File</Value>

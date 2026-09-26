@@ -66,6 +66,7 @@
 						<c:EnumComboBox SelectedItem="{Binding Config.RtcType}" MinWidth="150" Grid.Row="1" Grid.Column="1" />
 					</Grid>
 					<c:CheckBoxWarning IsChecked="{Binding Config.EnableMgbaLogApi}" Text="{l:Translate chkEnableMgbaLogApi}" />
+					<CheckBox IsChecked="{Binding Config.FakeAdapter}" Content="{l:Translate chkFakeAdapter}" />
 
 					<c:OptionSection Header="{l:Translate grpOverclocking}">
 						<Border BorderThickness="1" BorderBrush="Gray" Padding="3" Width="370" HorizontalAlignment="Left">

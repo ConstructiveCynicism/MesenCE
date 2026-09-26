@@ -68,6 +68,7 @@ namespace Mesen.ViewModels
 				EmulatorShortcut.ToggleFrameCounter,
 				EmulatorShortcut.ToggleAlwaysOnTop,
 				EmulatorShortcut.ToggleCheats,
+				EmulatorShortcut.ToggleGbaWirelessAdapter,
 				EmulatorShortcut.ToggleOsd,
 
 				EmulatorShortcut.ToggleBgLayer1,

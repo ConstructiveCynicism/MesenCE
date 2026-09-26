@@ -59,6 +59,7 @@ namespace Mesen.Utilities
 
 				case EmulatorShortcut.ToggleDebugInfo: ToggleDebugInfo(); break;
 				case EmulatorShortcut.ToggleCheats: ToggleCheats(); break;
+				case EmulatorShortcut.ToggleGbaWirelessAdapter: ToggleGbaWirelessAdapter(); break;
 				case EmulatorShortcut.MaxSpeed: ToggleMaxSpeed(); break;
 
 				case EmulatorShortcut.ToggleFullscreen: _mainWindow.ToggleFullscreen(); break;
@@ -437,6 +438,13 @@ namespace Mesen.Utilities
 		{
 			ConfigManager.Config.Cheats.DisableAllCheats = !ConfigManager.Config.Cheats.DisableAllCheats;
 			CheatCodes.ApplyCheats();
+		}
+
+		private void ToggleGbaWirelessAdapter()
+		{
+			ConfigManager.Config.Gba.FakeAdapter = !ConfigManager.Config.Gba.FakeAdapter;
+			ConfigManager.Config.Gba.ApplyConfig();
+			DisplayMessageHelper.DisplayMessage("GBA", ResourceHelper.GetMessage(ConfigManager.Config.Gba.FakeAdapter ? "GbaWirelessAdapterConnected" : "GbaWirelessAdapterDisconnected"));
 		}
 
 		private void ToggleOsd()

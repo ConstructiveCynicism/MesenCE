@@ -40,6 +40,12 @@ namespace Mesen.Config
 		[Reactive][MinMax(0, 100)] public UInt32 ChannelAVol { get; set; } = 100;
 		[Reactive][MinMax(0, 100)] public UInt32 ChannelBVol { get; set; } = 100;
 
+		[ObservableProperty] public partial bool FakeAdapter { get; set; } = false;
+		[ObservableProperty] public partial UInt32 FakeAdapterResetReady { get; set; } = 0;
+		[ObservableProperty] public partial UInt32 FakeAdapterAck { get; set; } = 0;
+		[ObservableProperty] public partial UInt32 FakeAdapterAckTimeout { get; set; } = 0;
+		[ObservableProperty] public partial UInt32 FakeAdapterAdapterBoot { get; set; } = 83386080;
+
 		public void ApplyConfig()
 		{
 			ConfigManager.Config.Video.ApplyConfig();
@@ -69,13 +75,26 @@ namespace Mesen.Config
 				Square1Vol = Square1Vol,
 				Square2Vol = Square2Vol,
 				NoiseVol = NoiseVol,
-				WaveVol = WaveVol
+				WaveVol = WaveVol,
+
+				FakeAdapter = FakeAdapter,
+				FakeAdapterResetReady = FakeAdapterResetReady,
+				FakeAdapterAck = FakeAdapterAck,
+				FakeAdapterAckTimeout = FakeAdapterAckTimeout,
+				FakeAdapterAdapterBoot = FakeAdapterAdapterBoot
 			});
 		}
 
 		internal void InitializeDefaults(DefaultKeyMappingType defaultMappings)
 		{
 			Controller.InitDefaults(defaultMappings, ControllerType.GbaController);
+		}
+
+		public void UpdateFromCoreConfig()
+		{
+			//Used to sync settings the core changed (e.g. wireless adapter after loading a save state)
+			InteropGbaConfig cfg = ConfigApi.GetGbaConfig();
+			FakeAdapter = cfg.FakeAdapter;
 		}
 	}
 
@@ -108,6 +127,12 @@ namespace Mesen.Config
 		public UInt32 Square2Vol;
 		public UInt32 NoiseVol;
 		public UInt32 WaveVol;
+
+		[MarshalAs(UnmanagedType.I1)] public bool FakeAdapter;
+		public UInt32 FakeAdapterResetReady;
+		public UInt32 FakeAdapterAck;
+		public UInt32 FakeAdapterAckTimeout;
+		public UInt32 FakeAdapterAdapterBoot;
 	}
 
 	public enum GbaSaveType

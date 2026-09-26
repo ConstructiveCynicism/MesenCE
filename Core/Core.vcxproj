@@ -81,6 +81,7 @@
     <ClInclude Include="GBA\GbaMemoryManager.h" />
     <ClInclude Include="GBA\GbaRomPrefetch.h" />
     <ClInclude Include="GBA\GbaSerial.h" />
+    <ClInclude Include="GBA\GbaFakeAdapter.h" />
     <ClInclude Include="GBA\GbaTimer.h" />
     <ClInclude Include="GBA\GbaTypes.h" />
     <ClInclude Include="GBA\Input\GbaController.h" />

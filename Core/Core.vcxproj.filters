@@ -2784,6 +2784,9 @@
     <ClInclude Include="GBA\GbaSerial.h">
       <Filter>GBA</Filter>
     </ClInclude>
+    <ClInclude Include="GBA\GbaFakeAdapter.h">
+      <Filter>GBA</Filter>
+    </ClInclude>
     <ClInclude Include="GBA\APU\GbaNoiseChannel.h">
       <Filter>GBA\APU</Filter>
     </ClInclude>

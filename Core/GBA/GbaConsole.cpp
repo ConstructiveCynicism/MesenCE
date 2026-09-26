@@ -117,7 +117,7 @@ LoadRomResult GbaConsole::LoadRom(VirtualFile& romFile)
 	_timer->Init(_memoryManager.get(), _apu.get());
 	_dmaController->Init(_cpu.get(), _memoryManager.get(), _prefetch.get());
 	_cpu->Init(_emu, _memoryManager.get(), _prefetch.get());
-	_serial->Init(_emu, _memoryManager.get());
+	_serial->Init(_emu, _memoryManager.get(), GetMasterClockRate());
 	_controlManager->Init(_memoryManager.get());
 
 	LoadBattery();
@@ -357,6 +357,8 @@ void GbaConsole::Reset()
 
 void GbaConsole::RunFrame()
 {
+	//apply adapter settings on frame boundary
+	_serial->ApplyAdapter();
 	uint32_t frameCount = _ppu->GetFrameCount();
 	uint32_t& newCount = _ppu->GetState().FrameCount;
 

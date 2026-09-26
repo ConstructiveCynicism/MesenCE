@@ -141,6 +141,9 @@ namespace Mesen.Config.Shortcuts
 		StartRecordHdPack,
 		StopRecordHdPack,
 
+		//GBA
+		ToggleGbaWirelessAdapter,
+
 		LastValidValue,
 		[Obsolete] LoadRandomGame,
 	}

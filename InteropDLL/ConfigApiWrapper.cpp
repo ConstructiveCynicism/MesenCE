@@ -103,6 +103,11 @@ extern "C"
 		return _emu->GetSettings()->GetNesConfig();
 	}
 
+	DllExport GbaConfig __stdcall GetGbaConfig()
+	{
+		return _emu->GetSettings()->GetGbaConfig();
+	}
+
 	DllExport void __stdcall GetAudioDevices(char* outDeviceList, uint32_t maxLength)
 	{
 		StringUtilities::CopyToBuffer(_soundManager ? _soundManager->GetAvailableDevices() : "", outDeviceList, maxLength);
