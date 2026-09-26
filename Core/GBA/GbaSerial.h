@@ -1,8 +1,10 @@
 #pragma once
 #include "pch.h"
 #include "GBA/GbaTypes.h"
+#include "GBA/GbaFakeAdapter.h"
 #include "Shared/Emulator.h"
 #include "Shared/EmuSettings.h"
+#include "Shared/NotificationManager.h"
 #include "Utilities/BitUtilities.h"
 #include "Utilities/Serializer.h"
 
@@ -11,24 +13,83 @@ class GbaSerial final : public ISerializable
 private:
 	GbaSerialState _state = {};
 	GbaMemoryManager* _memoryManager = nullptr;
+	Emulator* _emu = nullptr;
+	uint32_t _masterClockRate = 0;
+
+	GbaFakeAdapter _fakeAdapter;
+	bool _hasFakeAdapter = false;
+
+	//Normal mode: RCNT bit 15 clear, SIOCNT bit 13 clear
+	bool IsNormalMode() { return !(_state.Mode & 0x8000) && !(_state.Control & 0x2000); }
+	bool IsSDHigh() { return (_state.Mode & 0xC000) == 0x8000 && (_state.Mode & 0x20) && (_state.Mode & 0x02); }
 
 	void UpdateState()
 	{
 		if(_state.Active && _memoryManager->GetMasterClock() >= _state.EndMasterClock) {
 			_state.Active = false;
 			_state.Control &= ~0x80;
+
+			//send the word at the clock when transfer ends
+			if(_hasFakeAdapter && _state.TransferWord && IsNormalMode()) {
+				uint32_t sent = _state.Data[0] | ((uint32_t)_state.Data[1] << 16);
+				uint32_t received = _fakeAdapter.Transfer(sent, _state.EndMasterClock);
+				_state.Data[0] = (uint16_t)received;
+				_state.Data[1] = (uint16_t)(received >> 16);
+			}
+		}
+	}
+
+	void UpdateResetLine()
+	{
+		if(_hasFakeAdapter) {
+			_fakeAdapter.SetResetLine(IsSDHigh(), _memoryManager->GetMasterClock());
+		}
+	}
+
+	void PlugInAdapter(uint64_t clock)
+	{
+		GbaConfig& cfg = _emu->GetSettings()->GetGbaConfig();
+		GbaFakeAdapter::Timings timings;
+		timings.ResetReady = cfg.FakeAdapterResetReady;
+		timings.Ack = cfg.FakeAdapterAck;
+		timings.AckTimeout = cfg.FakeAdapterAckTimeout;
+		timings.AdapterBoot = cfg.FakeAdapterAdapterBoot;
+
+		_fakeAdapter.SetTimings(timings);
+		_fakeAdapter.PowerOn(clock);
+		_fakeAdapter.SetResetLine(IsSDHigh(), clock);
+		if(IsNormalMode()) {
+			_fakeAdapter.SetSO(_state.Control & 0x08, clock);
 		}
 	}
 
 public:
-	void Init(Emulator* emu, GbaMemoryManager* memoryManager)
+	//note: masterClockRate doesn't get updated until ROM load
+	void Init(Emulator* emu, GbaMemoryManager* memoryManager, uint32_t masterClockRate)
 	{
+		_emu = emu;
+		_masterClockRate = masterClockRate;
 		_memoryManager = memoryManager;
 		_state.IrqMasterClock = UINT64_MAX;
 
 		if(emu->GetSettings()->GetGbaConfig().SkipBootScreen) {
 			//BIOS leaves serial registers in this state, some games expect this
 			_state.Mode = 0x8000;
+		}
+	}
+
+	//Called at start to avoid landing midframe
+	void ApplyAdapter()
+	{
+		bool shouldHaveAdapter = _emu->GetSettings()->GetGbaConfig().FakeAdapter;
+		if(shouldHaveAdapter == _hasFakeAdapter) {
+			return;
+		}
+
+		UpdateState();
+		_hasFakeAdapter = shouldHaveAdapter;
+		if(_hasFakeAdapter) {
+			PlugInAdapter(_memoryManager->GetMasterClock());
 		}
 	}
 
@@ -40,6 +101,10 @@ public:
 	void CheckForIrq(uint64_t masterClock)
 	{
 		if(masterClock >= _state.IrqMasterClock) {
+			if(_hasFakeAdapter) {
+				//Finish transfer so answer gets read
+				UpdateState();
+			}
 			_memoryManager->SetIrqSource(GbaIrqSource::Serial);
 			_state.IrqMasterClock = UINT64_MAX;
 		}
@@ -48,6 +113,10 @@ public:
 	uint8_t ReadRegister(uint32_t addr, bool peek)
 	{
 		//TODOGBA - serial support
+		if(_hasFakeAdapter && !peek) {
+			UpdateState(); //Finish transfers before observation
+		}
+
 		switch(addr) {
 			case 0x120:
 			case 0x122:
@@ -67,10 +136,10 @@ public:
 					if(_state.Active && _memoryManager->GetMasterClock() >= _state.EndMasterClock) {
 						control &= ~0x80;
 					}
-					return control;
+					return ApplySI(control);
 				} else {
 					UpdateState();
-					return BitUtilities::GetBits<0>(_state.Control);
+					return ApplySI(BitUtilities::GetBits<0>(_state.Control));
 				}
 
 			case 0x129: return BitUtilities::GetBits<8>(_state.Control);
@@ -104,9 +173,22 @@ public:
 		return _memoryManager->GetOpenBus(addr);
 	}
 
+	//SIOCNT bit 2 is the SI line, which is driven with adapter acknowledgement
+	uint8_t ApplySI(uint8_t control)
+	{
+		if(_hasFakeAdapter) {
+			control = (control & ~0x04) | (_fakeAdapter.GetSI(_memoryManager->GetMasterClock()) ? 0x04 : 0);
+		}
+		return control;
+	}
 	void WriteRegister(uint32_t addr, uint8_t value)
 	{
 		//TODOGBA - serial support
+		if(_hasFakeAdapter) {
+			//Finish any ended transfer before adapter observes, or before registers overwritten
+			UpdateState();
+		}
+
 		switch(addr) {
 			case 0x120:
 			case 0x122:
@@ -129,8 +211,23 @@ public:
 
 				_state.InternalShiftClock = value & 0x01;
 				_state.InternalShiftClockSpeed2MHz = value & 0x02;
+
+				if(_hasFakeAdapter && IsNormalMode()) {
+					//Normal Mode has SO set as bit 3
+					_fakeAdapter.SetSO(value & 0x08, _memoryManager->GetMasterClock());
+				}
+
 				bool active = value & 0x80;
-				if(active && !_state.Active) {
+				//if for some reason we end up waiting on adapter clock, this tracks it
+				bool waitingForClock = _state.Active && _state.EndMasterClock == UINT64_MAX;
+				if(active && _hasFakeAdapter && !_state.InternalShiftClock) {
+					//if clock is set to the adapter on port, the adapter fails to set the clock so transfer waits
+					if(!_state.Active) {
+						_state.StartMasterClock = _memoryManager->GetMasterClock();
+						_state.EndMasterClock = UINT64_MAX;
+						_state.IrqMasterClock = UINT64_MAX;
+					}
+				} else if(active && (!_state.Active || waitingForClock)) {
 					_state.StartMasterClock = _memoryManager->GetMasterClock();
 					_state.EndMasterClock = _state.StartMasterClock + (_state.InternalShiftClockSpeed2MHz ? 8 : 64) * (_state.TransferWord ? 32 : 8);
 					_state.EndMasterClock += 6;
@@ -154,7 +251,7 @@ public:
 				}
 
 				if(_state.Active) {
-					if(_state.StartMasterClock == _memoryManager->GetMasterClock()) {
+					if(_state.StartMasterClock == _memoryManager->GetMasterClock() && _state.EndMasterClock != UINT64_MAX) {
 						//Update end based on params
 						_state.EndMasterClock = _state.StartMasterClock + (_state.InternalShiftClockSpeed2MHz ? 8 : 64) * (_state.TransferWord ? 32 : 8);
 						_state.EndMasterClock += 6;
@@ -169,8 +266,14 @@ public:
 			case 0x12A: BitUtilities::SetBits<0>(_state.SendData, value); break;
 			case 0x12B: BitUtilities::SetBits<8>(_state.SendData, value); break;
 
-			case 0x134: BitUtilities::SetBits<0>(_state.Mode, value); break;
-			case 0x135: BitUtilities::SetBits<8>(_state.Mode, value & 0xC1); break;
+			case 0x134:
+				BitUtilities::SetBits<0>(_state.Mode, value);
+				UpdateResetLine();
+				break;
+			case 0x135:
+				BitUtilities::SetBits<8>(_state.Mode, value & 0xC1);
+				UpdateResetLine();
+				break;
 
 			case 0x140: BitUtilities::SetBits<0>(_state.JoyControl, value); break;
 			case 0x141: BitUtilities::SetBits<8>(_state.JoyControl, value); break;
@@ -211,6 +314,20 @@ public:
 			SV(_state.Active);
 			SV(_state.TransferWord);
 			SV(_state.IrqEnabled);
+
+			SV(_hasFakeAdapter);
+			if(_hasFakeAdapter) {
+				SV(_fakeAdapter);
+			}
+
+			if(!s.IsSaving()) {
+				GbaConfig& cfg = _emu->GetSettings()->GetGbaConfig();
+				if(cfg.FakeAdapter != _hasFakeAdapter) {
+					cfg.FakeAdapter = _hasFakeAdapter;
+					//Let the UI update its copy of the setting
+					_emu->GetNotificationManager()->SendNotification(ConsoleNotificationType::RequestConfigChange);
+				}
+			}
 		}
 	}
 };

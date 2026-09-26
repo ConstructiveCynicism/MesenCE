@@ -106,6 +106,11 @@ extern "C"
 		return _emu->GetSettings()->GetNesConfig();
 	}
 
+	DllExport GbaConfig __stdcall GetGbaConfig()
+	{
+		return _emu->GetSettings()->GetGbaConfig();
+	}
+
 	DllExport void __stdcall GetAudioDevices(char* outDeviceList, uint32_t maxLength)
 	{
 		shared_ptr<IAudioDevice> soundManager = _emu->GetSoundManager();

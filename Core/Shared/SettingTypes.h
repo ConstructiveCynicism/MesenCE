@@ -533,6 +533,12 @@ struct GbaConfig
 	uint32_t Square2Vol = 100;
 	uint32_t NoiseVol = 100;
 	uint32_t WaveVol = 100;
+
+	bool FakeAdapter = false;
+	uint32_t FakeAdapterResetReady = 0;
+	uint32_t FakeAdapterAck = 0;
+	uint32_t FakeAdapterAckTimeout = 0;
+	uint32_t FakeAdapterAdapterBoot = 83386080;
 };
 
 enum class PceConsoleType
@@ -1114,6 +1120,9 @@ enum class EmulatorShortcut
 	VsInsertCoin4,
 	StartRecordHdPack,
 	StopRecordHdPack,
+
+	//GBA
+	ToggleGbaWirelessAdapter,
 
 	ShortcutCount,
 };

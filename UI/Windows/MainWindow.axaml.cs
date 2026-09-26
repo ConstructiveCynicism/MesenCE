@@ -466,8 +466,9 @@ namespace Mesen.Windows
 
 		private static void UpdateInputConfiguration()
 		{
-			//Used to update input devices when the core requests changes (NES-only for now)
+			//Used to update settings when the core requests changes (NES input devices, GBA wireless adapter)
 			ConfigManager.Config.Nes.UpdateInputFromCoreConfig();
+			ConfigManager.Config.Gba.UpdateFromCoreConfig();
 		}
 
 		private void InitializeComponent()
